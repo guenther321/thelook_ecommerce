@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: globepay
+    database: DEEL_ANALYTICS
+    schema: RAW
+    tables:
+      - name: globepay_acceptance_transactions
+      - name: globepay_chargeback_transactions

@@ -1,0 +1,33 @@
+version: 2
+
+snapshots:
+  - name: snap_int_chargeback_transactions
+    description: |
+      Snapshot of intermediate chargeback transactions table tracking changes over time.
+      Captures all chargeback records with confirmed status (status = 'true') and their
+      modifications to enable historical analysis and change tracking.
+    
+    columns:
+      - name: external_ref
+        description: Unique identifier for the payment transaction
+        data_tests:
+          - unique
+          - not_null
+
+      - name: status
+        description: |
+          Payment processor status indicator (TRUE/FALSE).
+          NOTE: Purpose is undocumented in Globepay API spec. Requires clarification with data team.
+        data_tests:
+          - not_null
+
+      - name: source
+        description: Source or origin of the chargeback record
+
+      - name: has_chargeback
+        description: Boolean flag indicating if chargeback exists (true/false)
+
+      - name: dbt_updated_at
+        description: Timestamp when the record was last updated, used for snapshot strategy
+        data_tests:
+          - not_null

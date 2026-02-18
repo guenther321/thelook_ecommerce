@@ -1,0 +1,90 @@
+version: 2
+
+models:
+  - name: payments
+    description: |
+      Core fact table for all payment transactions from Globepay.
+      
+      This model is materialized as an incremental table for efficient updates. It sources
+      acceptance transaction data and enriches it with the latest chargeback status from
+      the snapshot, enabling efficient tracking of payment outcomes over time.
+      
+      The has_chargeback column is merged from the snapshot's latest records (dbt_valid_to is null),
+      capturing whether a transaction was ultimately chargedback without storing historical changes
+      in the base fact table.
+    
+    columns:
+      - name: transaction_ref
+        description: Primary key - Internal transaction reference (processor-agnostic identifier)
+        data_tests:
+          - unique
+          - not_null
+
+      - name: external_ref
+        description: External identifier from the payment processor (e.g., Globepay transaction ID)
+        data_tests:
+          - not_null
+
+      - name: status
+        description: |
+          Payment processor status indicator (TRUE/FALSE).
+          NOTE: Purpose is undocumented in Globepay API spec. Requires clarification with data team.
+        data_tests:
+          - not_null
+
+      - name: source
+        description: Payment processor identifier (e.g., GLOBALPAY, STRIPE, PAYPAL)
+
+      - name: transaction_date_time
+        description: Full timestamp of the transaction (YYYY-MM-DD HH:MM:SS format)
+        data_tests:
+          - not_null
+
+      - name: transaction_date
+        description: Date portion of the transaction (YYYY-MM-DD format)
+        data_tests:
+          - not_null
+
+      - name: transaction_state
+        description: |
+          State or province associated with the cardholder's address.
+          Standardized two-letter abbreviation (e.g., CA, NY, TX).
+
+      - name: is_accepted
+        description: Boolean flag indicating if the transaction was accepted (true/false)
+        data_tests:
+          - not_null
+
+      - name: is_declined
+        description: Boolean flag indicating if the transaction was declined (true/false)
+        data_tests:
+          - not_null
+
+      - name: cvv_provided
+        description: Boolean flag indicating if CVV was provided during the transaction
+
+      - name: amount_local
+        description: Transaction amount in the transaction's original currency
+        data_tests:
+          - not_null
+
+      - name: amount_usd
+        description: Transaction amount converted to USD using the exchange rate from the rates field
+        data_tests:
+          - not_null
+
+      - name: country
+        description: Two-letter ISO country code of the cardholder (e.g., US, CA, GB)
+        data_tests:
+          - not_null
+
+      - name: currency
+        description: Three-letter ISO currency code (e.g., USD, EUR, GBP)
+        data_tests:
+          - not_null
+
+      - name: has_chargeback
+        description: |
+          Boolean flag indicating whether the transaction was ultimately chargedback.
+          Pulled from the latest snapshot record (dbt_valid_to is null) for each external_ref.
+          True = chargedback, False = not chargedback, Null = no chargeback record exists.

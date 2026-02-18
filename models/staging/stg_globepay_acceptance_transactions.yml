@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: stg_globepay_acceptance_transactions
+    description: |
+      Staging layer for Globepay payment acceptance transactions.
+      
+      Globepay is a single and secure payment platform that lets you collect payments quickly from around the world in different currencies. It works across devices and is designed to increase your conversion.
+      
+      Globepay makes it easy to build a first-class global payments experience:
+      - Designed to remove friction—Real-time card validation with built-in error messaging
+      - Mobile-ready—Fully responsive design
+      - International—Supports 15 languages and multiple payment currencies
+      - Customization and branding—Customizable buttons and background color
+      - Fraud and compliance—Simplified PCI compliance and SCA-ready
+      - Additional features—Collect addresses, send email receipts, and more
+      
+      This model provides a 1:1 view of raw acceptance transaction data with minimal transformations for downstream consumption.
+    
+    columns:
+      - name: external_ref
+        description: Unique external reference identifier for the transaction (evt_*)
+        tests:
+          - unique
+          - not_null
+      
+      - name: status
+        description: |
+          Globepay status indicator (TRUE/FALSE). 
+          NOTE: Purpose is undocumented in Globepay API spec. 
+          Likely indicates record validity/confirmation status. Requires clarification with data team.
+      
+      - name: source
+        description: Data source system identifier (GLOBALPAY)
+      
+      - name: transaction_ref
+        description: Internal reference ID for the transaction
+        tests:
+          - unique
+          - not_null
+      
+      - name: transaction_date_time
+        description: ISO 8601 formatted timestamp of when the transaction occurred
+      
+      - name: transaction_state
+        description: Binary state of the transaction (ACCEPTED or DECLINED)
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['ACCEPTED', 'DECLINED']
+      
+      - name: cvv_provided
+        description: Boolean flag indicating whether CVV was provided with the transaction
+      
+      - name: amount_local
+        description: Transaction local amount in minor units (cents) that was charged to the card
+      
+      - name: country
+        description: Two-character ISO country code of the card's origin country
+      
+      - name: currency
+        description: Three-character ISO 4217 currency code for the transaction
+      
+      - name: rates
+        description: JSON object containing exchange rates for various currencies. Funds are settled in USD.
+      
+      - name: transaction_date
+        description: Date portion of the transaction timestamp (cast from transaction_date_time)

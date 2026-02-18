@@ -1,15 +1,54 @@
-Welcome to your new dbt project!
-
-### Using the starter project
-
-Try running the following commands:
-- dbt run
-- dbt test
-
-
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [dbt community](https://getdbt.com/community) to learn from other analytics engineers
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
+Analytics Engineering Challenge
+Intro
+Welcome and congratulations on progressing to the Deel Analytics Engineering Challenge! ��
+As discussed on the introduction call, we have an internal home task that we like our candidates
+to complete before moving forward in the interview process. Please follow along with the
+document and return the finalized prompt by the end of the current day - you should limit
+yourself to a single workday of effort.
+For this task, you can use any analytical tools; however, we strongly advise you to utilize dbt.
+For context, this is our current data transformation tool and we utilize Snowflake for
+warehousing - we find this to be a helpful way to measure our candidate’s experience and fit
+with Deel. Below we have included a helpful link to set up a dbt project.
+In your submission, attach all your code for us to review. If you worked on GitHub (or
+anything similar), please include the link to your repository.
+Setup Link
+dbt Setup
+1. If you don’t already have dbt installed, follow this guide.
+2. Configure your profile to connect with your SQL database.
+3. If you want to use dbt Cloud, you can follow the quickstart steps on the dbt
+documentation.
+Prompt
+Business Context
+Deel clients can add funds to their Deel account using their credit and debit cards. Deel has
+partnered with Globepay to process all of these account funding credit and debit card
+transactions. Globepay is an industry-leading global payment processor and is able to process
+payments in many currencies from cards domiciled in many countries.
+Deel has connectivity into Globepay using their API. Deel clients provide their credit and
+debit details within the Deel web application, Deel systems pass those credentials along with
+any relevant transaction details to Globepay for processing.
+Please see related files in the attached zip file.
+Assignment
+A Data Analyst at Deel has submitted a request for you to create a model to answer a few
+questions about payments. Three files have been provided in the request (attached to this
+document as files.zip) - however, no schema specifications were given.
+Part 1
+For the first part of the challenge, please ingest and model the source data — try following the
+dbt modeling standards ⭐
+.
+1. Please include a document with information around:
+1. Preliminary data exploration
+2. Summary of your model architecture
+3. Lineage graphs
+4. Tips around macros, data validation, and documentation
+Part 2
+For the second part of the challenge, please develop a production version of the model for the
+Data Analyst to utilize. This model should be able to answer these three questions at a
+minimum:
+1. What is the acceptance rate over time?
+2. List the countries where the amount of declined transactions went over $25M
+3. Which transactions are missing chargeback data?
+In addition to presenting the model, please provide the code (pseudo-code also suffices) for
+answering these questions. Feel free to provide the code, the actual answers, a brief description
+for the analyst, and any charts or images to help with the explanation.
+As a reminder, you should limit yourself to a single workday and return the prompt by the end of
+the day. Good luck!
