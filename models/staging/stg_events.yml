@@ -4,7 +4,7 @@ models:
   - name: stg_events
     description: "Staging model for events. Raw data cleaned and conformed."
     columns:
-      - name: id
+      - name: event_id
         description: "Primary key."
         tests:
           - not_null
