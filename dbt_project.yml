@@ -1,11 +1,11 @@
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
-name: 'deel_payments'
+name: 'thelook'
 version: '1.0.0'
 config-version: 2
 
-profile: 'deel_payments'
+profile: 'thelook'
 
 model-paths: ["models"]
 analysis-paths: ["analysis"]
@@ -19,31 +19,29 @@ clean-targets:
   - "dbt_modules"
 
 models:
-  deel_payments:
-    +database: DEEL_ANALYTICS
-    
+  thelook:
     staging:
       +materialized: view
       +on_schema_change: "fail"
 
     intermediate:
-      +schema: INTERMEDIATE
+      +schema: intermediate
       +materialized: view
       +on_schema_change: "fail"
     
     marts:
-      +schema: MARTS
+      +schema: marts
       +materialized: table
       +on_schema_change: "fail"
 
     analytics:
-      +schema: ANALYTICS
+      +schema: analytics
       +materialized: table
     
 seeds:
-  deel_payments:
+  thelook:
     +quote_columns: true
 
 tests:
-  deel_payments:
+  thelook:
     +store_failures: true

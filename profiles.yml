@@ -1,0 +1,21 @@
+thelook:
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: gg-data-mesh
+      dataset: g_gaiser
+      threads: 16
+      timeout_seconds: 300
+      location: US
+
+    prod:
+      type: bigquery
+      method: oauth
+      project: gg-data-mesh
+      dataset: staging
+      threads: 16
+      timeout_seconds: 300
+      location: US
+
+  target: dev
