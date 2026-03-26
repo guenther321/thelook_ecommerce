@@ -8,6 +8,7 @@ with events as (
 
 sessions as (
     select
+        concat(coalesce(cast(user_id as string), 'unknown'), '-', cast(session_id as string)) as user_session_id,
         session_id,
         user_id,
         min(event_created_at) as session_started_at,
@@ -25,7 +26,7 @@ sessions as (
         min(city) as city,
         min(state) as state
     from events
-    group by session_id, user_id
+    group by all
 )
 
 select * from sessions

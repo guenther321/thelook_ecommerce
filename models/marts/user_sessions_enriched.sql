@@ -38,6 +38,7 @@ session_order_metrics as (
 )
 
 select
+    sessions.user_session_id,
     sessions.session_id,
     sessions.user_id,
     sessions.session_started_at,
@@ -57,7 +58,7 @@ select
     coalesce(session_order_metrics.session_revenue, 0) as session_revenue,
     coalesce(session_order_metrics.session_cost, 0) as session_cost,
     coalesce(session_order_metrics.session_margin, 0) as session_margin,
-    session_order_metrics.orders_in_session > 0 as has_converted
+    coalesce(session_order_metrics.orders_in_session > 0, false) as has_converted
 
 from sessions
 left join session_order_metrics

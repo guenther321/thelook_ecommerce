@@ -1,10 +1,11 @@
 version: 2
 
 models:
+
   - name: int_user_sessions
     description: >
       User web sessions aggregated from raw events.
-      Grain: one row per session.
+      Grain: one row per user_session_id (user_id + session_id).
     config:
       materialized: incremental
       incremental_strategy: insert_overwrite
@@ -13,16 +14,24 @@ models:
         data_type: timestamp
         granularity: day
     columns:
-      - name: session_id
-        description: Primary key — unique session identifier (UUID) from the source events.
+      - name: user_session_id
+        description: Unique identifier for a user session (user_id + session_id).
         tests:
           - unique
           - not_null
 
-      - name: user_id
-        description: Foreign key to users.
+      - name: session_id
+        description: Session identifier (UUID) from the source events.
         tests:
           - not_null
+
+      - name: user_id
+        description: |
+          Foreign key to users. May be null for anonymous or unrecognized sessions (should be rare; monitor as a warning).
+        tests:
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               arguments:
                 to: ref('stg_users')

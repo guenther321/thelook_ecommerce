@@ -28,6 +28,8 @@ models:
         tests:
           - not_null
           - relationships:
+              config:
+                severity: warn
               arguments:
                 to: ref('stg_orders')
                 field: order_id

@@ -14,18 +14,25 @@ models:
         granularity: day
       cluster_by:
         - user_id
-        - has_converted
+
     columns:
-      - name: session_id
-        description: Primary key — unique session identifier (UUID).
+      - name: user_session_id
+        description: Unique identifier for a user session (user_id + session_id).
         tests:
           - unique
+          - not_null
+
+      - name: session_id
+        description: Session identifier (UUID) from the source events.
+        tests:
           - not_null
 
       - name: user_id
         description: Foreign key to users.
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               arguments:
                 to: ref('stg_users')
