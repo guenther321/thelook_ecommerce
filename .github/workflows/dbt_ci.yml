@@ -37,7 +37,14 @@ jobs:
       - name: Install dbt packages
         run: dbt deps --profiles-dir . --target ci
 
-      - name: Run and test all models
+      - name: Ensure prod-artifacts/manifest.json exists
+        run: |
+          if [ ! -f ./prod-artifacts/manifest.json ]; then
+            echo "Error: prod-artifacts/manifest.json not found. Please commit your production manifest.json to prod-artifacts/manifest.json."
+            exit 1
+          fi
+
+      - name: Run and test all models (state-based)
         run: dbt build --select state:modified+1 --defer --state ./prod-artifacts/ --profiles-dir . --target ci
 
   model-coverage:
