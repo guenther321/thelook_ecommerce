@@ -1,0 +1,68 @@
+name: dbt CI
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  DBT_PROFILES_DIR: .
+  DBT_TARGET: ci
+
+jobs:
+  dbt-ci:
+    name: dbt build + test
+    runs-on: ubuntu-latest
+
+    steps:
+      # Service Account: dbt-ci@gg-data-mesh.iam.gserviceaccount.com
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dbt
+        run: pip install dbt-bigquery
+
+      - name: Verify dbt connection
+        run: dbt debug --profiles-dir . --target ci
+
+      - name: Install dbt packages
+        run: dbt deps --profiles-dir . --target ci
+
+      - name: Run and test all models
+        run: dbt build --select state:modified+1 --defer --state ./prod-artifacts/ --profiles-dir . --target ci
+
+  model-coverage:
+    name: Check model documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check every model has a YML file
+        run: |
+          missing=0
+          for sql_file in $(find models/ -name "*.sql" -not -path "*/analysis/*"); do
+            dir=$(dirname "$sql_file")
+            model_name=$(basename "$sql_file" .sql)
+            if ! grep -rq "name: ${model_name}" "${dir}"/*.yml 2>/dev/null; then
+              echo "❌ Missing YML entry for: ${sql_file}"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo ""
+            echo "Found ${missing} model(s) without YML documentation."
+            exit 1
+          else
+            echo "✅ All models have YML documentation."
+          fi

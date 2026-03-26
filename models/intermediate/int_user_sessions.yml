@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: int_user_sessions
+    description: >
+      User web sessions aggregated from raw events.
+      Grain: one row per session.
+    config:
+      materialized: incremental
+      incremental_strategy: insert_overwrite
+      partition_by:
+        field: session_started_at
+        data_type: timestamp
+        granularity: day
+    columns:
+      - name: session_id
+        description: Primary key — unique session identifier (UUID) from the source events.
+        tests:
+          - unique
+          - not_null
+
+      - name: user_id
+        description: Foreign key to users.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_users')
+                field: user_id
+
+      - name: session_started_at
+        description: Timestamp of the first event in the session.
+        tests:
+          - not_null
+
+      - name: session_ended_at
+        description: Timestamp of the last event in the session.
+        tests:
+          - not_null
+
+      - name: session_duration_seconds
+        description: Duration of the session in seconds (difference between last and first event).
+        tests:
+          - not_null
+
+      - name: number_of_events
+        description: Total number of events recorded in the session.
+        tests:
+          - not_null
+
+      - name: entry_uri
+        description: URI of the first page visited in the session (based on sequence_number = 1).
+
+      - name: exit_uri
+        description: URI of the last page visited in the session (based on latest event timestamp).
+
+      - name: browser
+        description: Browser used during the session.
+
+      - name: traffic_source
+        description: Traffic source that brought the user to the session (e.g. Organic, Facebook, Email).
+
+      - name: city
+        description: City of the user during the session.
+
+      - name: state
+        description: State of the user during the session.

@@ -1,0 +1,100 @@
+version: 2
+
+models:
+  - name: int_orders_enriched
+    description: >
+      Order-grain model joining order header data with customer attributes and
+      aggregated order item metrics. Single source of truth for what an order
+      looks like. Grain: one row per order.
+    columns:
+      - name: order_id
+        description: Primary key — unique identifier for each order.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_status
+        description: Current status of the order.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Processing
+                  - Shipped
+                  - Complete
+                  - Returned
+                  - Cancelled
+
+      - name: order_created_at
+        description: Timestamp when the order was placed.
+        tests:
+          - not_null
+
+      - name: order_shipped_at
+        description: Timestamp when the order was shipped. Null if not yet shipped.
+
+      - name: order_delivered_at
+        description: Timestamp when the order was delivered. Null if not yet delivered.
+
+      - name: order_returned_at
+        description: Timestamp when the order was returned. Null if not returned.
+
+      - name: user_id
+        description: Foreign key to users.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_users')
+                field: user_id
+
+      - name: first_name
+        description: Customer first name.
+
+      - name: last_name
+        description: Customer last name.
+
+      - name: email
+        description: Customer email address.
+
+      - name: country
+        description: Customer country.
+
+      - name: city
+        description: Customer city.
+
+      - name: state
+        description: Customer state.
+
+      - name: user_traffic_source
+        description: Traffic source that originally acquired the customer.
+
+      - name: order_total_revenue
+        description: Total revenue for the order (sum of sale prices across all items).
+        tests:
+          - not_null
+
+      - name: order_total_cost
+        description: Total cost for the order (sum of product costs across all items).
+        tests:
+          - not_null
+
+      - name: order_total_margin
+        description: Total gross margin for the order (revenue minus cost).
+        tests:
+          - not_null
+
+      - name: number_of_items
+        description: Number of line items in the order.
+        tests:
+          - not_null
+
+      - name: avg_days_to_ship
+        description: Average days to ship across all items in the order.
+
+      - name: avg_days_to_deliver
+        description: Average days to deliver across all items in the order.
+
+      - name: has_return
+        description: Boolean — true if any item in the order was returned.
