@@ -1,0 +1,88 @@
+version: 2
+
+models:
+  - name: orders
+    description: >
+      PII-stripped order fact table for BI consumption. Exposes order header,
+      geographic and behavioural customer attributes, and aggregated order item
+      metrics. Excludes first_name, last_name, and email. One row per order.
+    config:
+      materialized: table
+      partition_by:
+        field: order_created_at
+        data_type: timestamp
+        granularity: day
+      cluster_by:
+        - user_id
+        - order_status
+    columns:
+      - name: order_id
+        description: Primary key — unique identifier for each order.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_status
+        description: Current status of the order.
+        tests:
+          - not_null
+
+      - name: order_created_at
+        description: Timestamp when the order was placed. Used as partition key.
+        tests:
+          - not_null
+
+      - name: order_shipped_at
+        description: Timestamp when the order was shipped. Null if not yet shipped.
+
+      - name: order_delivered_at
+        description: Timestamp when the order was delivered. Null if not yet delivered.
+
+      - name: order_returned_at
+        description: Timestamp when the order was returned. Null if not returned.
+
+      - name: user_id
+        description: Foreign key to users (pseudonymous identifier, not PII).
+        tests:
+          - not_null
+
+      - name: country
+        description: Customer country.
+
+      - name: city
+        description: Customer city.
+
+      - name: state
+        description: Customer state.
+
+      - name: user_traffic_source
+        description: Traffic source that originally acquired the customer.
+
+      - name: order_total_revenue
+        description: Total revenue for the order (sum of sale prices across all items).
+        tests:
+          - not_null
+
+      - name: order_total_cost
+        description: Total cost for the order (sum of product costs across all items).
+        tests:
+          - not_null
+
+      - name: order_total_margin
+        description: Total gross margin for the order (revenue minus cost).
+        tests:
+          - not_null
+
+      - name: number_of_items
+        description: Number of line items in the order.
+        tests:
+          - not_null
+
+      - name: avg_days_to_ship
+        description: Average days to ship across all items in the order.
+
+      - name: avg_days_to_deliver
+        description: Average days to deliver across all items in the order.
+
+      - name: has_return
+        description: Boolean — true if any item in the order was returned.

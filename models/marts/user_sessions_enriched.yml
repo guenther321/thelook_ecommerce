@@ -1,0 +1,98 @@
+version: 2
+
+models:
+  - name: user_sessions_enriched
+    description: >
+      Session-grain fact table enriching user sessions with attributed order metrics.
+      Orders are attributed to sessions when the order timestamp falls within the
+      session window plus a 5-minute buffer. One row per session.
+    config:
+      materialized: table
+      partition_by:
+        field: session_started_at
+        data_type: timestamp
+        granularity: day
+      cluster_by:
+        - user_id
+        - has_converted
+    columns:
+      - name: session_id
+        description: Primary key — unique session identifier (UUID).
+        tests:
+          - unique
+          - not_null
+
+      - name: user_id
+        description: Foreign key to users.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_users')
+                field: user_id
+
+      - name: session_started_at
+        description: Timestamp of the first event in the session. Used as partition key.
+        tests:
+          - not_null
+
+      - name: session_ended_at
+        description: Timestamp of the last event in the session.
+        tests:
+          - not_null
+
+      - name: session_duration_seconds
+        description: Duration of the session in seconds.
+
+      - name: number_of_events
+        description: Total number of events recorded in the session.
+        tests:
+          - not_null
+
+      - name: entry_uri
+        description: URI of the first page visited in the session.
+
+      - name: exit_uri
+        description: URI of the last page visited in the session.
+
+      - name: browser
+        description: Browser used during the session.
+
+      - name: traffic_source
+        description: Traffic source that brought the user to the session.
+
+      - name: city
+        description: City of the user during the session.
+
+      - name: state
+        description: State of the user during the session.
+
+      - name: orders_in_session
+        description: Number of orders attributed to this session.
+        tests:
+          - not_null
+
+      - name: items_in_session
+        description: Total number of items across all orders attributed to this session.
+        tests:
+          - not_null
+
+      - name: session_revenue
+        description: Total revenue from orders attributed to this session.
+        tests:
+          - not_null
+
+      - name: session_cost
+        description: Total cost from orders attributed to this session.
+        tests:
+          - not_null
+
+      - name: session_margin
+        description: Total gross margin from orders attributed to this session.
+        tests:
+          - not_null
+
+      - name: has_converted
+        description: Boolean — true if at least one order was attributed to this session.
+        tests:
+          - not_null

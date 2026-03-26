@@ -1,0 +1,147 @@
+version: 2
+
+models:
+  - name: int_order_items_enriched
+    description: >
+      Order items enriched with product details, distribution center info,
+      inventory timing, and calculated fields like gross margin and fulfilment metrics.
+      Grain: one row per order item.
+    config:
+      materialized: incremental
+      incremental_strategy: insert_overwrite
+      partition_by:
+        field: order_item_created_at
+        data_type: timestamp
+        granularity: day
+      cluster_by:
+        - order_id
+        - user_id
+    columns:
+      - name: order_item_id
+        description: Primary key — unique identifier for each order item.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: Foreign key to orders.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+
+      - name: user_id
+        description: Foreign key to users.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_users')
+                field: user_id
+
+      - name: product_id
+        description: Foreign key to products.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+
+      - name: inventory_item_id
+        description: Foreign key to inventory items.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_inventory_items')
+                field: inventory_item_id
+
+      - name: order_item_status
+        description: Current status of the order item.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Processing
+                  - Shipped
+                  - Complete
+                  - Returned
+                  - Cancelled
+
+      - name: order_item_created_at
+        description: Timestamp when the order item was created. Used as partition key.
+        tests:
+          - not_null
+
+      - name: order_item_shipped_at
+        description: Timestamp when the order item was shipped. Null if not yet shipped.
+
+      - name: order_item_delivered_at
+        description: Timestamp when the order item was delivered. Null if not yet delivered.
+
+      - name: order_item_returned_at
+        description: Timestamp when the order item was returned. Null if not returned.
+
+      - name: sale_price
+        description: Sale price of the item.
+        tests:
+          - not_null
+
+      - name: product_name
+        description: Name of the product.
+
+      - name: product_category
+        description: Category of the product (e.g. Jeans, Swim, Outerwear).
+
+      - name: product_brand
+        description: Brand of the product.
+
+      - name: product_department
+        description: Department the product belongs to (e.g. Men, Women).
+
+      - name: product_sku
+        description: Stock keeping unit identifier for the product.
+
+      - name: product_cost
+        description: Cost of the product from the product catalogue.
+        tests:
+          - not_null
+
+      - name: product_retail_price
+        description: Retail price of the product as listed in the catalogue.
+
+      - name: distribution_center_name
+        description: Name of the distribution center the product is shipped from.
+
+      - name: distribution_center_latitude
+        description: Latitude of the distribution center.
+
+      - name: distribution_center_longitude
+        description: Longitude of the distribution center.
+
+      - name: inventory_item_created_at
+        description: Timestamp when the inventory item was added to stock.
+
+      - name: inventory_item_sold_at
+        description: Timestamp when the inventory item was sold. Null if unsold.
+
+      - name: gross_margin
+        description: Calculated as sale_price minus product_cost.
+        tests:
+          - not_null
+
+      - name: is_returned
+        description: Boolean flag indicating whether the order item was returned.
+
+      - name: inventory_holding_days
+        description: Number of days the inventory item was held in stock before being sold.
+
+      - name: days_to_ship
+        description: Number of days between order creation and shipment.
+
+      - name: days_to_deliver
+        description: Number of days between shipment and delivery.

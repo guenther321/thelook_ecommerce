@@ -18,4 +18,13 @@ thelook:
       timeout_seconds: 300
       location: US
 
+    ci:
+      type: bigquery
+      method: oauth
+      project: gg-data-mesh
+      dataset: ci
+      threads: 8
+      timeout_seconds: 300
+      location: US
+
   target: dev
