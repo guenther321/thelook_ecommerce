@@ -1,5 +1,9 @@
 with orders as (
     select * from {{ ref('stg_orders') }}
+
+    {% if is_incremental() %}
+    where order_created_at >= timestamp_sub(current_timestamp(), interval {{ var('lookback_days', 30) }} day)
+    {% endif %}
 ),
 
 users as (
