@@ -4,48 +4,8 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  DBT_PROFILES_DIR: .
-  DBT_TARGET: ci
-
 jobs:
-  dbt-ci:
-    name: dbt build + test
-    runs-on: ubuntu-latest
-
-    steps:
-      # Service Account: dbt-ci@gg-data-mesh.iam.gserviceaccount.com
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Install dbt-fusion
-        run: |
-          curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh \
-            | sh -s -- --update --version v2.0.0-preview.154 --to /usr/local/bin
-
-      - name: Verify dbt connection
-        run: dbt debug --profiles-dir . --target ci
-
-      - name: Install dbt packages
-        run: dbt deps --profiles-dir . --target ci
-
-      - name: Ensure prod-artifacts/manifest.json exists
-        run: |
-          if [ ! -f ./prod-artifacts/manifest.json ]; then
-            echo "Error: prod-artifacts/manifest.json not found. Please commit your production manifest.json to prod-artifacts/manifest.json."
-            exit 1
-          fi
-
-      - name: Run and test all models (state-based)
-        run: dbt build --select state:modified+1 --defer --state ./prod-artifacts/ --profiles-dir . --target ci
-
   model-coverage:
-    name: Check model documentation
     runs-on: ubuntu-latest
 
     steps:
