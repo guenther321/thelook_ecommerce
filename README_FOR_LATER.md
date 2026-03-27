@@ -1,0 +1,1 @@
+how to keep the incremental to 30 days during the week, but have incremental of 1 year on a Saturday of table int_order_items_enriched (Airflow?)

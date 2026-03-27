@@ -6,6 +6,16 @@ models:
       Order-grain model joining order header data with customer attributes and
       aggregated order item metrics. Single source of truth for what an order
       looks like. Grain: one row per order.
+    config:
+      materialized: incremental
+      incremental_strategy: insert_overwrite
+      partition_by:
+        field: order_created_at
+        data_type: timestamp
+        granularity: day
+      cluster_by:
+        - order_id
+        - user_id
     columns:
       - name: order_id
         description: Primary key — unique identifier for each order.
