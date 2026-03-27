@@ -1,4 +1,3 @@
--- staging model for products
 with source_data as (
     select
         id                      as product_id,
