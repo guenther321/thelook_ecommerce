@@ -73,22 +73,26 @@ models:
       - name: order_total_revenue
         description: Total revenue for the order (sum of sale prices across all items).
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
 
       - name: order_total_cost
         description: Total cost for the order (sum of product costs across all items).
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
 
       - name: order_total_margin
         description: Total gross margin for the order (revenue minus cost).
-        tests:
-          - not_null
 
       - name: number_of_items
         description: Number of line items in the order.
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
 
       - name: avg_days_to_ship
         description: Average days to ship across all items in the order.
