@@ -20,7 +20,7 @@ thelook:
 
     ci:
       type: bigquery
-      method: oauth
+      method: application-default
       project: gg-data-mesh
       dataset: ci
       threads: 8
