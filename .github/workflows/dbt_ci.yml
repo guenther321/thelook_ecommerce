@@ -26,7 +26,7 @@ jobs:
       - name: Install dbt-fusion
         run: |
           curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh \
-            | sh -s -- --update --version v2.0.0-preview.163 --to /usr/local/bin
+            | sh -s -- --update --version 2.0.0-preview.164 --to /usr/local/bin
 
       - name: Verify dbt connection
         run: dbt debug --profiles-dir . --target ci
