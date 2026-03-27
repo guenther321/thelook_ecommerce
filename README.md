@@ -1,54 +1,73 @@
-Analytics Engineering Challenge
-Intro
-Welcome and congratulations on progressing to the Deel Analytics Engineering Challenge! ��
-As discussed on the introduction call, we have an internal home task that we like our candidates
-to complete before moving forward in the interview process. Please follow along with the
-document and return the finalized prompt by the end of the current day - you should limit
-yourself to a single workday of effort.
-For this task, you can use any analytical tools; however, we strongly advise you to utilize dbt.
-For context, this is our current data transformation tool and we utilize Snowflake for
-warehousing - we find this to be a helpful way to measure our candidate’s experience and fit
-with Deel. Below we have included a helpful link to set up a dbt project.
-In your submission, attach all your code for us to review. If you worked on GitHub (or
-anything similar), please include the link to your repository.
-Setup Link
-dbt Setup
-1. If you don’t already have dbt installed, follow this guide.
-2. Configure your profile to connect with your SQL database.
-3. If you want to use dbt Cloud, you can follow the quickstart steps on the dbt
-documentation.
-Prompt
-Business Context
-Deel clients can add funds to their Deel account using their credit and debit cards. Deel has
-partnered with Globepay to process all of these account funding credit and debit card
-transactions. Globepay is an industry-leading global payment processor and is able to process
-payments in many currencies from cards domiciled in many countries.
-Deel has connectivity into Globepay using their API. Deel clients provide their credit and
-debit details within the Deel web application, Deel systems pass those credentials along with
-any relevant transaction details to Globepay for processing.
-Please see related files in the attached zip file.
-Assignment
-A Data Analyst at Deel has submitted a request for you to create a model to answer a few
-questions about payments. Three files have been provided in the request (attached to this
-document as files.zip) - however, no schema specifications were given.
-Part 1
-For the first part of the challenge, please ingest and model the source data — try following the
-dbt modeling standards ⭐
-.
-1. Please include a document with information around:
-1. Preliminary data exploration
-2. Summary of your model architecture
-3. Lineage graphs
-4. Tips around macros, data validation, and documentation
-Part 2
-For the second part of the challenge, please develop a production version of the model for the
-Data Analyst to utilize. This model should be able to answer these three questions at a
-minimum:
-1. What is the acceptance rate over time?
-2. List the countries where the amount of declined transactions went over $25M
-3. Which transactions are missing chargeback data?
-In addition to presenting the model, please provide the code (pseudo-code also suffices) for
-answering these questions. Feel free to provide the code, the actual answers, a brief description
-for the analyst, and any charts or images to help with the explanation.
-As a reminder, you should limit yourself to a single workday and return the prompt by the end of
-the day. Good luck!
+# TheLook eCommerce — dbt Project
+
+## Purpose
+
+This repo is a **sandbox** for practising and applying various analytics engineering skills in preparation for an interview as **Lead Analytics Engineer** (contractor) for a 6–12 month project between **Monzo** and **Mastercard**.
+
+## Job Description
+
+### Data Warehouse Re-Architecture Project
+
+Monzo is looking for a Lead Analytics Engineer (contractor) to assist in a data warehouse migration of data assets and pipelines to a new architecture.
+
+The work will involve embedding in an existing data team within a given business domain (e.g. Payments, Borrowing, Finance, etc.) and defining and building key data assets for that area. This will require strong data modelling skills and ability to quickly absorb and elicit business context. The tooling involved will be a combination of open source, cloud and in-house data engineering tools with a focus on SQL data modelling (namely dbt SQL, orchestrated in Airflow and executed in BigQuery).
+
+The re-architecture is not intended to be like-for-like and so will therefore involve understanding the business requirements in order to identify model-generation patterns, safely backfill historical data, and enable zero-downtime cutovers for downstream users. The objective is to unblock dependent analytics teams quickly while reducing long-term cost, duplication, and architectural complexity.
+
+This project involves close collaboration with other data and business practitioners, leveraging existing ways of working, development and testing frameworks, and tooling to deliver with high consistency and quality.
+
+### Key Technical Skills
+
+- Strong track record of data modelling, ETL and data pipelines and scaling data warehousing infrastructure
+- Expert level skills in SQL, data modelling, data warehousing concepts and working with large petabyte scale datasets
+- Deep familiarity with common data engineering tools, particularly dbt, Airflow and cloud data warehouses such as BigQuery / Snowflake
+- Experience working with data streams from various services, such as financial, transactional, and operational backend systems
+- Experience building robust and reliable data sets that require a high level of control and correctness
+- Ability to think strategically about business context and need — experience working closely with product or business squads to build out data architecture for insights or reporting purposes
+
+### Behaviours and Soft Skills
+
+- Able to work with cross-functional, fast-moving teams and balancing priorities and technical trade-offs
+- Enabling other Data Scientists and Analytics Engineers to excel by sharing expertise on data architecture, as well as influencing backend engineering decisions
+- Work closely with backend engineering and data platform team to define the data architecture across systems in a unified manner
+- Collaboratively set standards across data at Monzo, fostering knowledge sharing and continuously improving data practices
+- Contribute to prioritising data governance issues, ensuring a comprehensive approach to data integrity and compliance
+
+## Practice Roadmap
+
+### P0 — Must know (core of the role)
+- [ ] Advanced incremental strategies — `merge`, `insert_overwrite`, microbatch, late-arriving data
+- [ ] Star schema / dimensional modelling — fact and dimension tables at scale
+- [ ] Modelling financial/transactional data — handling payment streams, statuses, and event-driven data
+- [ ] Safe historical backfill strategies — incremental models with full refresh, partition-based backfill
+- [ ] Data reconciliation — comparing old vs new pipeline outputs to ensure correctness
+- [ ] Partitioning and clustering — optimal strategies for petabyte-scale tables in BigQuery
+- [ ] Custom macros — reusable SQL generators, dynamic SQL, Jinja patterns
+- [ ] dbt packages — dbt_utils, dbt_expectations, dbt_elementary
+
+### P1 — Very important (will likely come up in interview)
+- [ ] Model-generation patterns — reusable macros that generate models (e.g. codegen for staging)
+- [ ] Slowly Changing Dimensions (SCD Type 2) — dbt snapshots for tracking historical changes
+- [ ] Zero-downtime cutovers — running old and new pipelines in parallel, validation before switching
+- [ ] Schema change handling — `on_schema_change` strategies, contract enforcement in dbt
+- [ ] dbt contracts and model governance — access controls, model versions, groups
+- [ ] Unit testing — validating transformation logic in isolation (dbt unit tests)
+- [ ] Data contracts — enforcing schemas between producers and consumers
+- [ ] Source freshness checks — `dbt source freshness`
+- [ ] Airflow basics — DAGs, operators, scheduling, dependencies
+- [ ] dbt + Airflow integration — running dbt from Airflow (Cosmos, BashOperator)
+
+### P2 — Good to know (differentiators)
+- [ ] Reducing duplication and complexity — refactoring redundant models, DRY principles
+- [ ] BigQuery cost optimization — slot reservations, query optimization, materialization choices
+- [ ] Nested/repeated fields (STRUCT/ARRAY) — common in BigQuery, useful for denormalization
+- [ ] Advanced testing — dbt_expectations for distribution checks, volume anomalies, row-level validation
+- [ ] Data observability — Elementary dashboards, lineage tracking
+- [ ] Tags, selectors, and CI strategies — efficient `dbt build` in large projects
+- [ ] Documentation standards — comprehensive YML docs, column-level descriptions
+- [ ] Naming conventions and style guide — contributing guidelines for a team setting
+
+### P3 — Nice to have
+- [ ] Exposures — documenting downstream dependencies (dashboards, ML models)
+- [ ] Seeds — managing reference/lookup data
+- [ ] Monitoring and alerting — using Elementary for pipeline observability
