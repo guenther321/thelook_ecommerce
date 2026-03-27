@@ -1,3 +1,4 @@
+-- CI test: verify automated checks run on PR
 with source_data as (
     select
         id                      as product_id,
