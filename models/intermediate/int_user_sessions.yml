@@ -7,6 +7,7 @@ models:
       User web sessions aggregated from raw events.
       Grain: one row per user_session_id (user_id + session_id).
     config:
+      tags: ["daily_3d"]       
       materialized: incremental
       incremental_strategy: insert_overwrite
       partition_by:

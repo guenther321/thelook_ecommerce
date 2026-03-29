@@ -45,3 +45,6 @@ seeds:
 tests:
   thelook:
     +store_failures: true
+
+vars:
+  lookback_days: 3                  # default for all incremental models

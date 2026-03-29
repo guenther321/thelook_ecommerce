@@ -1,9 +1,10 @@
 with orders as (
     select * from {{ ref('stg_orders') }}
-
-    {% if is_incremental() %}
-    where order_created_at >= timestamp_sub(current_timestamp(), interval {{ var('lookback_days', 30) }} day)
-    {% endif %}
+    where 1=1
+        {{ get_incremental_filter(
+            partition_expr='date(order_created_at)',
+            floor_interval='2 year'
+        ) }}
 ),
 
 users as (
