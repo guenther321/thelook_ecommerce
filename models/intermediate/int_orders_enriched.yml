@@ -7,6 +7,7 @@ models:
       aggregated order item metrics. Single source of truth for what an order
       looks like. Grain: one row per order.
     config:
+      tags: ["daily_30d", "weekly_12m"]
       materialized: incremental
       incremental_strategy: insert_overwrite
       partition_by:

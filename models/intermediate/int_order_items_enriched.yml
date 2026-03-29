@@ -7,6 +7,7 @@ models:
       inventory timing, and calculated fields like gross margin and fulfilment metrics.
       Grain: one row per order item.
     config:
+      tags: ["daily_30d", "weekly_12m"] 
       materialized: incremental
       incremental_strategy: insert_overwrite
       partition_by:

@@ -1,9 +1,10 @@
 with order_items as (
     select * from {{ ref('stg_order_items') }}
-
-    {% if is_incremental() %}
-    where order_item_created_at >= timestamp_sub(current_timestamp(), interval {{ var('lookback_days', 30) }} day)
-    {% endif %}
+    where 1=1
+        {{ get_incremental_filter(
+            partition_expr='date(order_item_created_at)',
+            floor_interval='2 year'
+        ) }}
 ),
 
 products as (

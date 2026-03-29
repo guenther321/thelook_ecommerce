@@ -1,88 +1,83 @@
-"""
-DAG: dbt_daily_build
---------------------
-Runs the thelook dbt pipeline daily at 6am UTC.
-
-- Weekdays: 30-day lookback (fast incremental refresh)
-- Saturdays: 365-day lookback (deep weekly backfill to catch late-arriving data)
-- Runs every day at 6am UTC
-
-Uses Cosmos to render each dbt model as its own Airflow task, giving
-full visibility into model-level success/failure in the Airflow UI.
-"""
-
+import json
 from datetime import datetime
 from pathlib import Path
 
 from airflow.decorators import dag
-from cosmos import DbtTaskGroup, ProjectConfig, ProfileConfig, ExecutionConfig, RenderConfig
-from cosmos.profiles import GoogleCloudServiceAccountDictProfileMapping
+from airflow.operators.bash import BashOperator
+from cosmos import DbtTaskGroup, ProjectConfig, ProfileConfig, RenderConfig
 from cosmos.constants import LoadMode
 
-# ── paths ──────────────────────────────────────────────────────────────────────
-DBT_PROJECT_PATH = Path("/usr/local/airflow/dbt/thelook_ecommerce")
-DBT_PROFILES_PATH = DBT_PROJECT_PATH  # profiles.yml lives in project root
+DBT_PROJECT_PATH = Path("/usr/local/airflow/include/thelook_ecommerce")
 
-# ── lookback logic ─────────────────────────────────────────────────────────────
-def get_lookback_days() -> int:
-    """Return 365 on Saturdays for deep backfill, 30 otherwise."""
-    return 365 if datetime.now().weekday() == 5 else 30
+# Lookback tiers — models opt-in by tag; each tier runs as a separate pass
+# Adding a new model to a tier = add the tag to its yml, DAG never changes
+DAILY_TIERS = [
+    ("tag:daily_1d",   {"lookback_days":  1}),
+    ("tag:daily_3d",   {"lookback_days":  3}),
+    ("tag:daily_7d",   {"lookback_days":  7}),
+    ("tag:daily_30d",  {"lookback_days": 30}),
+    ("tag:daily_60d",  {"lookback_days": 60}),
+]
+
+PROFILE_CONFIG = ProfileConfig(
+    profile_name="thelook",
+    target_name="prod",
+    profiles_yml_filepath=DBT_PROJECT_PATH / "profiles.yml",
+)
 
 
-# ── DAG ────────────────────────────────────────────────────────────────────────
+# ── OPTION 1: BashOperator — one black-box task ────────────────────────────────
 @dag(
-    dag_id="dbt_daily_build",
-    description="Daily dbt build for thelook eCommerce pipeline",
-    schedule_interval="0 6 * * *",      # 6am UTC, every day
+    dag_id="dbt_daily_build_bashoperator",
+    description="Daily build — single BashOperator task",
+    schedule="0 6 * * *",
     start_date=datetime(2026, 1, 1),
     catchup=False,
-    tags=["dbt", "thelook"],
+    max_active_runs=1,
+    tags=["dbt", "daily", "BashOperator"],
 )
-def dbt_daily_build():
-
-    lookback_days = get_lookback_days()
-
-    # ── intermediates (incremental, run first) ──────────────────────────────
-    intermediates = DbtTaskGroup(
-        group_id="intermediates",
-        project_config=ProjectConfig(DBT_PROJECT_PATH),
-        profile_config=ProfileConfig(
-            profile_name="thelook",
-            target_name="prod",
-            profiles_yml_filepath=DBT_PROFILES_PATH / "profiles.yml",
-        ),
-        execution_config=ExecutionConfig(
-            dbt_executable_path="/usr/local/airflow/.venv/bin/dbt",
-        ),
-        render_config=RenderConfig(
-            select=["int_order_items_enriched", "int_orders_enriched"],
-            load_method=LoadMode.DBT_LS,
-        ),
-        operator_args={
-            "vars": {"lookback_days": lookback_days},
-        },
-    )
-
-    # ── marts (table, run after intermediates) ──────────────────────────────
-    marts = DbtTaskGroup(
-        group_id="marts",
-        project_config=ProjectConfig(DBT_PROJECT_PATH),
-        profile_config=ProfileConfig(
-            profile_name="thelook",
-            target_name="prod",
-            profiles_yml_filepath=DBT_PROFILES_PATH / "profiles.yml",
-        ),
-        execution_config=ExecutionConfig(
-            dbt_executable_path="/usr/local/airflow/.venv/bin/dbt",
-        ),
-        render_config=RenderConfig(
-            select=["orders"],
-            load_method=LoadMode.DBT_LS,
-        ),
-    )
-
-    # ── dependencies ────────────────────────────────────────────────────────
-    intermediates >> marts
+def dbt_daily_build_bashoperator():
+    tasks = [
+        BashOperator(
+            task_id=f"dbt_build_{selector.replace('tag:', '')}",
+            bash_command=(
+                f"dbt build "
+                f"--select {selector} "
+                f"--vars '{json.dumps(vars_)}' "
+                f"--profiles-dir {DBT_PROJECT_PATH} "
+                f"--target prod"
+            ),
+        )
+        for selector, vars_ in DAILY_TIERS
+    ]
+    # tiers run sequentially: 1d → 3d → 7d → 30d → 60d
+    for i in range(len(tasks) - 1):
+        tasks[i] >> tasks[i + 1]
 
 
-dbt_daily_build()
+# ── OPTION 3: Cosmos — one task per model, full lineage in UI ─────────────────
+@dag(
+    dag_id="dbt_daily_build_cosmos",
+    description="Daily build — Cosmos DbtTaskGroup per model",
+    schedule="0 6 * * *",
+    start_date=datetime(2026, 1, 1),
+    catchup=False,
+    max_active_runs=1,
+    tags=["dbt", "daily", "Cosmos"],
+)
+def dbt_daily_build_cosmos():
+    for selector, vars_ in DAILY_TIERS:
+        DbtTaskGroup(
+            group_id=f"{selector.replace('tag:', '')}",
+            project_config=ProjectConfig(DBT_PROJECT_PATH),
+            profile_config=PROFILE_CONFIG,
+            render_config=RenderConfig(
+                select=[selector],
+                load_method=LoadMode.DBT_LS,
+            ),
+            operator_args={"vars": vars_},
+        )
+
+
+dbt_daily_build_bashoperator()
+dbt_daily_build_cosmos()
