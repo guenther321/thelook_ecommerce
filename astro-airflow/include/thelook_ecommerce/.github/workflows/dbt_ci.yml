@@ -1,0 +1,32 @@
+name: dbt CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  model-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check every model has a YML file
+        run: |
+          missing=0
+          for sql_file in $(find models/ -name "*.sql" -not -path "*/analysis/*"); do
+            dir=$(dirname "$sql_file")
+            model_name=$(basename "$sql_file" .sql)
+            if ! grep -rq "name: ${model_name}" "${dir}"/*.yml 2>/dev/null; then
+              echo "❌ Missing YML entry for: ${sql_file}"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo ""
+            echo "Found ${missing} model(s) without YML documentation."
+            exit 1
+          else
+            echo "✅ All models have YML documentation."
+          fi

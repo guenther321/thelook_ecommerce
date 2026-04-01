@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: stg_distribution_centers
+    description: "Staging model for distribution centers. Raw data cleaned and conformed."
+    columns:
+      - name: distribution_center_id
+        description: "Primary key."
+        tests:
+          - not_null
+          - unique
+      # Add more columns as needed

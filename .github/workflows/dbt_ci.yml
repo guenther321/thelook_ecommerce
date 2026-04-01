@@ -30,3 +30,32 @@ jobs:
           else
             echo "✅ All models have YML documentation."
           fi
+
+      - name: Check every model has a frequency tag and a domain tag
+        run: |
+          missing=0
+          for yml_file in $(find models/ -name "*.yml" -not -path "*/analysis/*"); do
+            # skip yml files that don't define models (e.g. _sources.yml)
+            if ! grep -q "^models:" "$yml_file"; then
+              continue
+            fi
+            model_name=$(grep -A1 "^  - name:" "$yml_file" | grep "name:" | awk '{print $3}')
+            # check for at least one frequency tag (daily* or weekly*)
+            if ! grep -q '"daily\|"weekly' "$yml_file"; then
+              echo "❌ Missing frequency tag (daily_Xd / weekly_Xm) in: ${yml_file}"
+              missing=$((missing + 1))
+            fi
+            # check for at least one domain tag (domain:*)
+            if ! grep -q '"domain:' "$yml_file"; then
+              echo "❌ Missing domain tag (domain:X) in: ${yml_file}"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo ""
+            echo "Found ${missing} tagging issue(s). Every model needs a frequency tag and a domain tag."
+            echo "Example: tags: [\"daily_30d\", \"domain:orders\"]"
+            exit 1
+          else
+            echo "✅ All models have frequency and domain tags."
+          fi

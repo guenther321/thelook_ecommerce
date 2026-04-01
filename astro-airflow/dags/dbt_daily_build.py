@@ -1,9 +1,7 @@
-import json
 from datetime import datetime
 from pathlib import Path
 
 from airflow.decorators import dag
-from airflow.operators.bash import BashOperator
 from cosmos import DbtTaskGroup, ProjectConfig, ProfileConfig, RenderConfig
 from cosmos.constants import LoadMode
 
@@ -12,6 +10,7 @@ DBT_PROJECT_PATH = Path("/usr/local/airflow/include/thelook_ecommerce")
 # Lookback tiers — models opt-in by tag; each tier runs as a separate pass
 # Adding a new model to a tier = add the tag to its yml, DAG never changes
 DAILY_TIERS = [
+    ("tag:daily",      {"lookback_days":  0}),  # full rebuilds — table materialisation, no lookback
     ("tag:daily_1d",   {"lookback_days":  1}),
     ("tag:daily_3d",   {"lookback_days":  3}),
     ("tag:daily_7d",   {"lookback_days":  7}),
@@ -26,58 +25,68 @@ PROFILE_CONFIG = ProfileConfig(
 )
 
 
-# ── OPTION 1: BashOperator — one black-box task ────────────────────────────────
-@dag(
-    dag_id="dbt_daily_build_bashoperator",
-    description="Daily build — single BashOperator task",
-    schedule="0 6 * * *",
-    start_date=datetime(2026, 1, 1),
-    catchup=False,
-    max_active_runs=1,
-    tags=["dbt", "daily", "BashOperator"],
-)
-def dbt_daily_build_bashoperator():
-    tasks = [
-        BashOperator(
-            task_id=f"dbt_build_{selector.replace('tag:', '')}",
-            bash_command=(
-                f"dbt build "
-                f"--select {selector} "
-                f"--vars '{json.dumps(vars_)}' "
-                f"--profiles-dir {DBT_PROJECT_PATH} "
-                f"--target prod"
-            ),
-        )
-        for selector, vars_ in DAILY_TIERS
-    ]
-    # tiers run sequentially: 1d → 3d → 7d → 30d → 60d
-    for i in range(len(tasks) - 1):
-        tasks[i] >> tasks[i + 1]
+MANIFEST_PATH = DBT_PROJECT_PATH / "target" / "manifest.json"
 
 
-# ── OPTION 3: Cosmos — one task per model, full lineage in UI ─────────────────
-@dag(
-    dag_id="dbt_daily_build_cosmos",
-    description="Daily build — Cosmos DbtTaskGroup per model",
-    schedule="0 6 * * *",
-    start_date=datetime(2026, 1, 1),
-    catchup=False,
-    max_active_runs=1,
-    tags=["dbt", "daily", "Cosmos"],
-)
-def dbt_daily_build_cosmos():
+def _make_tier_groups(domain: str | None = None):
+    """Build one DbtTaskGroup per tier, optionally scoped to a domain tag."""
     for selector, vars_ in DAILY_TIERS:
+        # intersect tier tag with domain tag if provided
+        select = f"{selector},tag:domain:{domain}" if domain else selector
         DbtTaskGroup(
             group_id=f"{selector.replace('tag:', '')}",
-            project_config=ProjectConfig(DBT_PROJECT_PATH),
+            project_config=ProjectConfig(DBT_PROJECT_PATH, manifest_path=MANIFEST_PATH),
             profile_config=PROFILE_CONFIG,
             render_config=RenderConfig(
-                select=[selector],
-                load_method=LoadMode.DBT_LS,
+                select=[select],
+                load_method=LoadMode.DBT_MANIFEST,
             ),
             operator_args={"vars": vars_},
         )
 
 
-dbt_daily_build_bashoperator()
-dbt_daily_build_cosmos()
+# ── All models — one DAG for everything ───────────────────────────────────────
+@dag(
+    dag_id="dbt_daily_build",
+    description="Daily build — all models",
+    schedule="0 6 * * *",
+    start_date=datetime(2026, 1, 1),
+    catchup=False,
+    max_active_runs=1,
+    tags=["dbt", "daily"],
+)
+def dbt_daily_build():
+    _make_tier_groups()
+
+
+# ── Domain: orders ─────────────────────────────────────────────────────────────
+@dag(
+    dag_id="dbt_daily_orders",
+    description="Daily build — orders domain",
+    schedule="0 6 * * *",
+    start_date=datetime(2026, 1, 1),
+    catchup=False,
+    max_active_runs=1,
+    tags=["dbt", "daily", "domain:orders"],
+)
+def dbt_daily_orders():
+    _make_tier_groups(domain="orders")
+
+
+# ── Domain: sessions ──────────────────────────────────────────────────────────
+@dag(
+    dag_id="dbt_daily_sessions",
+    description="Daily build — sessions domain",
+    schedule="0 6 * * *",
+    start_date=datetime(2026, 1, 1),
+    catchup=False,
+    max_active_runs=1,
+    tags=["dbt", "daily", "domain:sessions"],
+)
+def dbt_daily_sessions():
+    _make_tier_groups(domain="sessions")
+
+
+dbt_daily_build()
+dbt_daily_orders()
+dbt_daily_sessions()
