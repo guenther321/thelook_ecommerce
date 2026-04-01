@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: users
+    description: >
+      Conformed user dimension. One row per user, current attributes only (SCD Type 1).
+      Used across fact tables as the single source of truth for user attributes.
+      Grain: one row per user_id.
+    config:
+      materialized: table
+      tags: ["daily", "domain:sessions"]
+      schema: marts
+    columns:
+      - name: user_id
+        description: Primary key — unique identifier for a user.
+        tests:
+          - unique
+          - not_null
+
+      - name: email
+        description: User email address.
+        tests:
+          - not_null
+
+      - name: age
+        description: User age in years.
+
+      - name: age_band
+        description: Derived age grouping for cohort analysis (under_18, 18_24, 25_34, 35_44, 45_54, 55_64, 65_plus).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['under_18', '18_24', '25_34', '35_44', '45_54', '55_64', '65_plus']
+
+      - name: gender
+        description: User gender.
+
+      - name: country
+        description: Country of the user.
+        tests:
+          - not_null
+
+      - name: traffic_source
+        description: Acquisition channel that brought the user to the platform.
+
+      - name: user_created_at
+        description: Timestamp when the user account was created.
+        tests:
+          - not_null
+
+      - name: user_created_date
+        description: Date when the user account was created (derived from user_created_at).
