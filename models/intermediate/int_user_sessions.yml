@@ -13,7 +13,7 @@ models:
         field: session_started_at
         data_type: timestamp
         granularity: day
-      tags: ["daily_3d", "domain:sessions"] 
+      tags: ["daily_3d"] 
     columns:
       - name: user_session_id
         description: Unique identifier for a user session (user_id + session_id).

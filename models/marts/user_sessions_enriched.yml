@@ -7,7 +7,7 @@ models:
       Orders are attributed to sessions when the order timestamp falls within the
       session window plus a 5-minute buffer. One row per session.
     config:
-      tags: ["daily_3d", "domain:sessions"]
+      tags: ["daily_3d"]
       materialized: table
       partition_by:
         field: session_started_at

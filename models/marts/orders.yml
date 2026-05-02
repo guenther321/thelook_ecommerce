@@ -8,7 +8,7 @@ models:
       metrics. Excludes first_name, last_name, and email. One row per order.
     config:
       materialized: table
-      tags: ["daily", "domain:orders"]
+      tags: ["daily"]
       partition_by:
         field: order_created_at
         data_type: timestamp
@@ -16,6 +16,38 @@ models:
       cluster_by:
         - user_id
         - order_status
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          arguments:
+            min_value: 1000
+            max_value: 1000000
+          config:
+            severity: warn
+      - elementary.volume_anomalies:
+          arguments:
+            timestamp_column: order_created_at
+            fail_on_zero: true
+            training_period:
+              period: day
+              count: 30
+            detection_period:
+              period: day
+              count: 2
+          config:
+            severity: warn
+      - elementary.dimension_anomalies:
+          arguments:
+            timestamp_column: order_created_at
+            dimensions:
+              - order_status
+            training_period:
+              period: day
+              count: 30
+            detection_period:
+              period: day
+              count: 2
+          config:
+            severity: warn
     columns:
       - name: order_id
         description: Primary key — unique identifier for each order.
@@ -61,6 +93,13 @@ models:
 
       - name: order_total_revenue
         description: Total revenue for the order (sum of sale prices across all items).
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100000
+              config:
+                severity: warn
 
       - name: order_total_cost
         description: Total cost for the order (sum of product costs across all items).
@@ -71,6 +110,12 @@ models:
 
       - name: order_total_margin
         description: Total gross margin for the order (revenue minus cost).
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "= round(order_total_revenue - order_total_cost, 2)"
+              config:
+                severity: warn
 
       - name: number_of_items
         description: Number of line items in the order.

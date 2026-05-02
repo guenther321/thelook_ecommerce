@@ -6,11 +6,11 @@ from cosmos import DbtTaskGroup, ProjectConfig, ProfileConfig, RenderConfig
 from cosmos.constants import LoadMode
 
 DBT_PROJECT_PATH = Path("/usr/local/airflow/include/thelook_ecommerce")
+MANIFEST_PATH = DBT_PROJECT_PATH / "target" / "manifest.json"
 
-# Lookback tiers — models opt-in by tag; each tier runs as a separate pass
-# Adding a new model to a tier = add the tag to its yml, DAG never changes
+# ── Lookback tiers ────────────────────────────────────────────────────────────
 DAILY_TIERS = [
-    ("tag:daily",      {"lookback_days":  0}),  # full rebuilds — table materialisation, no lookback
+    ("tag:daily",      {"lookback_days":  0}),
     ("tag:daily_1d",   {"lookback_days":  1}),
     ("tag:daily_3d",   {"lookback_days":  3}),
     ("tag:daily_7d",   {"lookback_days":  7}),
@@ -25,30 +25,9 @@ PROFILE_CONFIG = ProfileConfig(
 )
 
 
-MANIFEST_PATH = DBT_PROJECT_PATH / "target" / "manifest.json"
-
-
-def _make_tier_groups(domain: str | None = None):
-    """Build one DbtTaskGroup per tier, optionally scoped to a domain tag."""
-    for selector, vars_ in DAILY_TIERS:
-        # intersect tier tag with domain tag if provided
-        select = f"{selector},tag:domain:{domain}" if domain else selector
-        DbtTaskGroup(
-            group_id=f"{selector.replace('tag:', '')}",
-            project_config=ProjectConfig(DBT_PROJECT_PATH, manifest_path=MANIFEST_PATH),
-            profile_config=PROFILE_CONFIG,
-            render_config=RenderConfig(
-                select=[select],
-                load_method=LoadMode.DBT_MANIFEST,
-            ),
-            operator_args={"vars": vars_},
-        )
-
-
-# ── All models — one DAG for everything ───────────────────────────────────────
 @dag(
     dag_id="dbt_daily_build",
-    description="Daily build — all models",
+    description="Daily build — all daily models across all tiers",
     schedule="0 6 * * *",
     start_date=datetime(2026, 1, 1),
     catchup=False,
@@ -56,37 +35,17 @@ def _make_tier_groups(domain: str | None = None):
     tags=["dbt", "daily"],
 )
 def dbt_daily_build():
-    _make_tier_groups()
-
-
-# ── Domain: orders ─────────────────────────────────────────────────────────────
-@dag(
-    dag_id="dbt_daily_orders",
-    description="Daily build — orders domain",
-    schedule="0 6 * * *",
-    start_date=datetime(2026, 1, 1),
-    catchup=False,
-    max_active_runs=1,
-    tags=["dbt", "daily", "domain:orders"],
-)
-def dbt_daily_orders():
-    _make_tier_groups(domain="orders")
-
-
-# ── Domain: sessions ──────────────────────────────────────────────────────────
-@dag(
-    dag_id="dbt_daily_sessions",
-    description="Daily build — sessions domain",
-    schedule="0 6 * * *",
-    start_date=datetime(2026, 1, 1),
-    catchup=False,
-    max_active_runs=1,
-    tags=["dbt", "daily", "domain:sessions"],
-)
-def dbt_daily_sessions():
-    _make_tier_groups(domain="sessions")
+    for selector, vars_ in DAILY_TIERS:
+        DbtTaskGroup(
+            group_id=selector.replace("tag:", ""),
+            project_config=ProjectConfig(DBT_PROJECT_PATH, manifest_path=MANIFEST_PATH),
+            profile_config=PROFILE_CONFIG,
+            render_config=RenderConfig(
+                select=[selector],
+                load_method=LoadMode.DBT_MANIFEST,
+            ),
+            operator_args={"vars": vars_},
+        )
 
 
 dbt_daily_build()
-dbt_daily_orders()
-dbt_daily_sessions()
