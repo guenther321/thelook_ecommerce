@@ -8,7 +8,7 @@ models:
       Grain: one row per user_id.
     config:
       materialized: table
-      tags: ["daily", "domain:sessions"]
+      tags: ["daily"]
       schema: marts
     columns:
       - name: user_id
